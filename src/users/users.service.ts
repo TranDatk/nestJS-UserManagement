@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { genSaltSync, hashSync } from 'bcryptjs';
+import { compareSync, genSaltSync, hashSync } from 'bcryptjs';
 import { NotFoundException } from 'src/exceptions/not-found.exception';
 import mongoose from "mongoose";
 import { BadRequestCustomException } from 'src/exceptions/bad-request.exception';
@@ -20,7 +20,7 @@ export class UsersService {
     return hash;
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     const hashPassword = this.getHashPassword(createUserDto.password);
     const user = (await this.userModel.create({ ...createUserDto, password: hashPassword }));
     return user
@@ -39,6 +39,14 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(User.name);
     }
+    return user;
+  }
+
+  async findOneByUsername(username: string): Promise<User> {
+    const user = await this.userModel.findOne({
+      email: username
+    });
+
     return user;
   }
 
@@ -61,5 +69,9 @@ export class UsersService {
     const { deletedCount } = await this.userModel.deleteOne({ _id: id })
 
     return deletedCount;
+  }
+
+  isValidPassword(password: string, hash: string) {
+    return compareSync(password, hash)
   }
 }
