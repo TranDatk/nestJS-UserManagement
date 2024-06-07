@@ -21,9 +21,7 @@ import { AuthModule } from './auth/auth.module';
         isGlobal: true,
       }
     ),
-
     UsersModule,
-
     AuthModule],
 
   controllers: [AppController],

@@ -16,7 +16,7 @@ export class UsersService {
   getHashPassword = (password: string) => {
     var bcrypt = require('bcryptjs');
     var salt = genSaltSync(10);
-    var hash = hashSync("B4c0/\/", salt);
+    var hash = hashSync(password, salt);
     return hash;
   }
 
