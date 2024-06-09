@@ -2,16 +2,16 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nes
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
+import { User, UserDocument } from './schemas/user.schema';
 import { compareSync, genSaltSync, hashSync } from 'bcryptjs';
 import { NotFoundException } from 'src/exceptions/not-found.exception';
 import mongoose from "mongoose";
 import { BadRequestCustomException } from 'src/exceptions/bad-request.exception';
+import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
+  constructor(@InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>) { }
 
   getHashPassword = (password: string) => {
     var bcrypt = require('bcryptjs');
@@ -66,9 +66,7 @@ export class UsersService {
       throw new BadRequestCustomException(id);
     }
 
-    const { deletedCount } = await this.userModel.deleteOne({ _id: id })
-
-    return deletedCount;
+    return await this.userModel.softDelete({ _id: id })
   }
 
   isValidPassword(password: string, hash: string) {
