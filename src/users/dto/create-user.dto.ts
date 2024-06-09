@@ -1,10 +1,11 @@
 import { IsEmail, IsNotEmpty } from 'class-validator';
-import { IsUnique } from 'src/decorator/validation/is-unique-constraint';
+import { IsUnique } from 'src/custom-decorators/unique.decorator';
+
 
 export class CreateUserDto {
     @IsEmail()
     @IsNotEmpty()
-    @IsUnique('email', { message: 'Email already exists' })
+    @IsUnique('User', 'email', { message: 'Email already exists' })
     email: string;
 
     phone: string;

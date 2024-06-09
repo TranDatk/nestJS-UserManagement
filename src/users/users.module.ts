@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { IsUniqueConstraint } from 'src/decorator/validation/is-unique-constraint';
+import { IsUniqueConstraint } from 'src/custom-decorators/unique.decorator';
 
 @Module({
   imports: [
@@ -15,8 +15,8 @@ import { IsUniqueConstraint } from 'src/decorator/validation/is-unique-constrain
   ],
   controllers: [UsersController],
   providers: [
-    UsersService,
     IsUniqueConstraint,
+    UsersService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -8,6 +8,7 @@ import { NotFoundException } from 'src/exceptions/not-found.exception';
 import mongoose from "mongoose";
 import { BadRequestCustomException } from 'src/exceptions/bad-request.exception';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import aqp from 'api-query-params';
 
 @Injectable()
 export class UsersService {
@@ -26,8 +27,32 @@ export class UsersService {
     return user
   }
 
-  async findAll() {
-    return `This action returns all users`;
+  async findAll(currentPage: number, limit: number, qs: string) {
+    const { filter, skip, sort, projection, population } = aqp(qs);
+    delete filter.limit;
+    delete filter.page;
+
+    const offset = (+currentPage - 1) * (+limit);
+    const defaultLimit = +limit ? +limit : 10;
+    const totalItems = (await this.userModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const results = await this.userModel.find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .sort(sort as any)
+      .populate(population)
+      .exec();
+
+    return {
+      meta: {
+        current: currentPage,
+        pageSize: limit,
+        pages: totalPages,
+        total: totalItems
+      },
+      results
+    };
   }
 
   async findOne(id: string): Promise<User> {

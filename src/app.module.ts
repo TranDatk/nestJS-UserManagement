@@ -27,7 +27,8 @@ import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
       }
     ),
     UsersModule,
-    AuthModule],
+    AuthModule,
+  ],
 
   controllers: [AppController],
   providers: [AppService],
