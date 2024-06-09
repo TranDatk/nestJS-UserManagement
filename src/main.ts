@@ -4,11 +4,14 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './global-filters.ts/http-exception.filter';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { useContainer } from 'class-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(new ValidationPipe());
+
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new JwtAuthGuard(reflector));
