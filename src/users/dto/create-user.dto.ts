@@ -1,6 +1,16 @@
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEmail, IsMongoId, IsNotEmpty, IsNotEmptyObject, IsObject, ValidateNested } from 'class-validator';
+import mongoose from 'mongoose';
 import { IsUnique } from 'src/custom-decorators/unique.decorator';
 
+class Company {
+    @IsNotEmpty()
+    @IsMongoId()
+    _id: mongoose.Schema.Types.ObjectId;
+
+    @IsNotEmpty()
+    name: string;
+}
 
 export class CreateUserDto {
     @IsEmail()
@@ -15,8 +25,24 @@ export class CreateUserDto {
 
     @IsNotEmpty()
     name: string;
+
+    @IsNotEmpty()
+    gender: string;
+
     age: number;
+
     address: string;
-    createdAt: Date;
-    updatedAt: Date;
+
+    @IsNotEmpty()
+    role: string;
+
+    // @IsNotEmptyObject()
+    // @IsObject()
+    // @ValidateNested()
+    // @Type(() => Company)
+    // company: Company;
+
+    // createdAt: Date;
+
+    // updatedAt: Date;
 }
