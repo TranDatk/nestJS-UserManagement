@@ -1,14 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions, JwtVerifyOptions } from '@nestjs/jwt';
 import { IUser } from 'src/users/users.interface';
 import { RegisterUserDto } from 'src/users/dto/register-user.dto';
+import { ConfigService } from '@nestjs/config';
+import ms from 'ms'
+import { CookieOptions, Response } from 'express'
+import { JWTUnauthorizedException } from 'src/exceptions/jwt.unauthorized.exception';
+import { NotFoundException } from 'src/exceptions/not-found.exception';
+import { User } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
     constructor(
         private usersService: UsersService,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private configService: ConfigService
     ) { }
 
     async validateUser(username: string, pass: string): Promise<any> {
@@ -22,22 +29,38 @@ export class AuthService {
         return null;
     }
 
-    async login(user: IUser) {
+    async login(user: IUser, response: Response) {
         const { _id, name, email, role } = user;
         const payload = {
-            sub: "token login",
-            iss: "from server",
+            sub: "Token login",
+            iss: "From server",
             _id,
             name,
             email,
             role
         };
+
+        const refresh_token = this.createRefreshToken(payload);
+
+        //update user refresh token in database
+        await this.usersService.updateUserToken(refresh_token, _id);
+
+        //set cookies for response
+        const cookieOptions: CookieOptions = {
+            httpOnly: true,
+            maxAge: ms(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRE')),
+        }
+        response.cookie('refresh_token', refresh_token, cookieOptions);
+
         return {
             access_token: this.jwtService.sign(payload),
-            _id,
-            name,
-            email,
-            role
+            refresh_token: refresh_token,
+            user: {
+                _id,
+                name,
+                email,
+                role
+            }
         };
     }
 
@@ -48,5 +71,49 @@ export class AuthService {
             _id: newUser?._id,
             createAt: newUser?.createdAt
         }
+    }
+
+    createRefreshToken = (payload) => {
+        const signOption: JwtSignOptions = {
+            secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+            expiresIn: ms(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRE')) / 1000,
+        }
+        const refreshToken = this.jwtService.sign(payload, signOption);
+        return refreshToken;
+    }
+
+    async processNewToken(refreshToken: string | undefined, response: Response) {
+        if (refreshToken === undefined) {
+            return new JWTUnauthorizedException();
+        }
+
+        try {
+            const option: JwtVerifyOptions = {
+                secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+
+            }
+            this.jwtService.verify(refreshToken, option);
+
+            const user: User = await this.usersService.findUserByToken(refreshToken);
+            const parsingUser: IUser = {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            }
+            if (user) {
+                return this.login(parsingUser, response);
+            } else {
+                return new NotFoundException(User.name);
+            }
+        } catch (err) {
+            return new JWTUnauthorizedException();
+        }
+    }
+
+    async logout(user: IUser, response: Response) {
+        await this.usersService.updateUserToken(null, user._id);
+        response.clearCookie("refresh_token");
+        return "Log out successfully"
     }
 }

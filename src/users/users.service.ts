@@ -6,7 +6,7 @@ import { User, UserDocument } from './schemas/user.schema';
 import { compareSync, genSaltSync, hashSync } from 'bcryptjs';
 import { NotFoundException } from 'src/exceptions/not-found.exception';
 import mongoose from "mongoose";
-import { BadRequestCustomException } from 'src/exceptions/bad-request.exception';
+import { InvalidIdException } from 'src/exceptions/bad-request.exception';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
 import { IUser } from './users.interface';
@@ -60,8 +60,8 @@ export class UsersService {
 
   async findAll(currentPage: number, limit: number, qs: string) {
     const { filter, skip, sort, projection, population } = aqp(qs);
-    delete filter.limit;
-    delete filter.page;
+    delete filter.current;
+    delete filter.pageSize;
 
     const offset = (+currentPage - 1) * (+limit);
     const defaultLimit = +limit ? +limit : 10;
@@ -88,7 +88,7 @@ export class UsersService {
 
   async findOne(id: string): Promise<User> {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestCustomException(id);
+      throw new InvalidIdException(id);
     }
 
     const user = await this.userModel.findById(id).select("-password")
@@ -108,7 +108,7 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto, user: IUser) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestCustomException(id);
+      throw new InvalidIdException(id);
     }
 
     // This option allows the query to return new result.
@@ -128,7 +128,7 @@ export class UsersService {
 
   async remove(id: string, user: IUser) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestCustomException(id);
+      throw new InvalidIdException(id);
     }
 
     await this.userModel.updateOne(
@@ -138,12 +138,31 @@ export class UsersService {
           _id: user._id,
           email: user.email
         }
-      })
+      }
+    );
 
     return await this.userModel.softDelete({ _id: id })
   }
 
   isValidPassword(password: string, hash: string) {
     return compareSync(password, hash)
+  }
+
+  updateUserToken = async (refreshToken: string, id: string) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new InvalidIdException(id);
+    }
+    return await this.userModel.updateOne(
+      { _id: id },
+      {
+        refreshToken: refreshToken
+      }
+    );
+  }
+
+  findUserByToken = async (refreshToken: string) => {
+    return await this.userModel.findOne({
+      refreshToken
+    });
   }
 }
