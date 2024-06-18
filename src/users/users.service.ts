@@ -6,7 +6,7 @@ import { User, UserDocument } from './schemas/user.schema';
 import { compareSync, genSaltSync, hashSync } from 'bcryptjs';
 import { NotFoundException } from 'src/exceptions/not-found.exception';
 import mongoose from "mongoose";
-import { InvalidIdException } from 'src/exceptions/bad-request.exception';
+import { InvalidIdException } from 'src/exceptions/invalid-id-format.exception';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
 import { IUser } from './users.interface';

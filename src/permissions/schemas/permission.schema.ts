@@ -2,36 +2,24 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { timeStamp } from 'console';
 import mongoose, { HydratedDocument } from 'mongoose';
 
-export type UserDocument = HydratedDocument<User>;
+export type PermissionDocument = HydratedDocument<Permission>;
 
 @Schema({ timestamps: true })
-export class User {
+export class Permission {
     @Prop()
-    _id: string;
+    _id: mongoose.Schema.Types.ObjectId;
 
     @Prop({ required: true, unique: true, dropDups: true })
-    email: string;
-
-    @Prop()
-    phone: string;
-
-    @Prop({ required: true })
-    password: string;
-
-    @Prop()
     name: string;
 
     @Prop()
-    gender: string;
+    description: string;
 
     @Prop()
-    age: number;
+    isActive: boolean;
 
     @Prop()
-    role: string;
-
-    @Prop()
-    address: string;
+    module: string;
 
     @Prop()
     createdAt: Date;
@@ -65,9 +53,6 @@ export class User {
         email: string;
         name: string;
     };
-
-    @Prop()
-    refreshToken: string;
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export const PermissionSchema = SchemaFactory.createForClass(Permission);
