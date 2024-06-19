@@ -6,6 +6,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Permission, PermissionDocument } from './schemas/permission.schema';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { ExistedException } from 'src/exceptions/existed.format.exception';
+import aqp from 'api-query-params';
+import mongoose from 'mongoose';
+import { InvalidIdException } from 'src/exceptions/invalid-id-format.exception';
 
 @Injectable()
 export class PermissionsService {
@@ -19,26 +22,88 @@ export class PermissionsService {
     if (isExist) {
       throw new ExistedException(`apiPath: ${createPermissionDto.apiPath} and method: ${createPermissionDto.method}`);
     }
-    const newPermissions = await this.permissionModel.create({
+    const newPermissions: Permission = await this.permissionModel.create({
       ...createPermissionDto,
       createdBy: { _id: user._id, email: user.email }
     })
-    return 'This action adds a new permission';
+    return {
+      _id: newPermissions?._id,
+      createdAt: newPermissions?.createdAt
+    };
   }
 
-  findAll() {
-    return `This action returns all permissions`;
+  async findAll(currentPage: number, pageSize: number, qs: string) {
+    const { filter, skip, sort, projection, population } = aqp(qs);
+    delete filter.current;
+    delete filter.pageSize;
+
+    const offset = (+currentPage - 1) * (+pageSize);
+    const defaultLimit = +pageSize ? +pageSize : 10;
+    const totalItems = (await this.permissionModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const results = await this.permissionModel.find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .sort(sort as any)
+      .populate(population)
+      .select(projection as any)
+      .exec();
+
+    return {
+      meta: {
+        current: currentPage,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems
+      },
+      results
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} permission`;
+  async findOne(id: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new InvalidIdException(id);
+    }
+
+    return await this.permissionModel.findById(id);
   }
 
-  update(id: number, updatePermissionDto: UpdatePermissionDto) {
-    return `This action updates a #${id} permission`;
+  async update(id: string, updatePermissionDto: UpdatePermissionDto, user: IUser) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new InvalidIdException(id);
+    }
+
+    return await this.permissionModel.updateOne(
+      { _id: id },
+      {
+        ...updatePermissionDto,
+        updatedBy: {
+          _id: user._id,
+          email: user.email,
+          name: user.name
+        }
+      }
+    );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} permission`;
+  async remove(id: string, user: IUser) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new InvalidIdException(id);
+    }
+
+    await this.permissionModel.updateOne(
+      { _id: id },
+      {
+        deleteBy: {
+          _id: user._id,
+          email: user.email,
+          name: user.name
+        }
+      }
+    );
+    return await this.permissionModel.softDelete({
+      _id: id
+    });
   }
 }
