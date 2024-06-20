@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,10 +11,14 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
 import { IUser } from './users.interface';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>) { }
+  constructor(
+    @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>,
+    private configService: ConfigService
+  ) { }
 
   getHashPassword = (password: string) => {
     var bcrypt = require('bcryptjs');
@@ -92,17 +96,24 @@ export class UsersService {
       throw new InvalidIdException(id);
     }
 
-    const user = await this.userModel.findById(id).select("-password")
-    if (!user) {
-      throw new NotFoundException(User.name);
-    }
-    return user;
+    return await this.userModel.findById(id)
+      .select('-password')
+      .populate(
+        {
+          path: 'role',
+          select: {
+            name: 1,
+            _id: 1
+          }
+        }
+      )
+
   }
 
   async findOneByUsername(username: string): Promise<User> {
     const user = await this.userModel.findOne({
       email: username
-    });
+    }).populate({ path: "role", select: { name: 1, permissions: 1 } });
 
     return user;
   }
@@ -130,6 +141,11 @@ export class UsersService {
   async remove(id: string, user: IUser) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new InvalidIdException(id);
+    }
+
+    const adminUser: User = await this.userModel.findById(id);
+    if (adminUser.email === this.configService.get<string>('ADMIN_EMAIL')) {
+      throw new BadRequestException("Cannot delete the admin account!!!")
     }
 
     await this.userModel.updateOne(

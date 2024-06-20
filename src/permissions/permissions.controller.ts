@@ -17,7 +17,7 @@ export class PermissionsController {
   }
 
   @Get()
-  @ResponseMessage('Fetch permission with paginate')
+  @ResponseMessage('Fetch permissions with paginate')
   findAll(
     @Query("current") currentPage: string,
     @Query("pageSize") pageSize: string,
