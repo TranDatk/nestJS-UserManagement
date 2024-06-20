@@ -43,7 +43,7 @@ export class UsersService {
         }
       )
     );
-    return userResult
+    return userResult;
   }
 
   async register(registerUserDto: RegisterUserDto) {
