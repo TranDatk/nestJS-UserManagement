@@ -1,5 +1,4 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { timeStamp } from 'console';
 import mongoose, { HydratedDocument } from 'mongoose';
 
 export type PermissionDocument = HydratedDocument<Permission>;
@@ -14,6 +13,12 @@ export class Permission {
 
     @Prop()
     description: string;
+
+    @Prop()
+    apiPath: string;
+
+    @Prop()
+    method: string;
 
     @Prop()
     isActive: boolean;
