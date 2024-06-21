@@ -12,11 +12,14 @@ import aqp from 'api-query-params';
 import { IUser } from './users.interface';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { ConfigService } from '@nestjs/config';
+import { Role, RoleDocument } from 'src/roles/schemas/role.schema';
+import { USER_ROLE } from 'src/databases/init-data';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>,
+    @InjectModel(Role.name) private roleModel: SoftDeleteModel<RoleDocument>,
     private configService: ConfigService
   ) { }
 
@@ -48,18 +51,16 @@ export class UsersService {
 
   async register(registerUserDto: RegisterUserDto) {
     const hashPassword = this.getHashPassword(registerUserDto.password);
+    const userRole: Role = await this.userModel.findOne({ name: USER_ROLE });
     const userResult = (
       await this.userModel.create({
         ...registerUserDto,
         password: hashPassword,
-        role: "USER"
+        role: userRole._id
       }
       )
     );
-    return {
-      _id: userResult?._id,
-      createdAt: userResult?.createdAt
-    }
+    return userResult;
   }
 
   async findAll(currentPage: number, limit: number, qs: string) {
@@ -113,7 +114,7 @@ export class UsersService {
   async findOneByUsername(username: string): Promise<User> {
     const user = await this.userModel.findOne({
       email: username
-    }).populate({ path: "role", select: { name: 1, permissions: 1 } });
+    }).populate({ path: "role", select: { name: 1 } });
 
     return user;
   }
@@ -169,7 +170,8 @@ export class UsersService {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new InvalidIdException(id);
     }
-    return await this.userModel.updateOne(
+
+    return await this.userModel.findOneAndUpdate(
       { _id: id },
       {
         refreshToken: refreshToken
@@ -180,6 +182,10 @@ export class UsersService {
   findUserByToken = async (refreshToken: string) => {
     return await this.userModel.findOne({
       refreshToken
-    });
+    })
+      .populate({
+        path: 'role',
+        select: { name: 1 }
+      });
   }
 }

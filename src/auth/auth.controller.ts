@@ -7,11 +7,13 @@ import { RegisterUserDto } from 'src/users/dto/register-user.dto';
 import { Request, Response } from 'express';
 import { User } from 'src/custom-decorators/parsing-user-decorator';
 import { IUser } from 'src/users/users.interface';
+import { RolesService } from 'src/roles/roles.service';
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private authService: AuthService,
+        private roleService: RolesService,
     ) { }
 
     @Public()
@@ -24,6 +26,15 @@ export class AuthController {
     ) {
         return this.authService.login(user, response);
     }
+
+    @ResponseMessage('Get user information')
+    @Get('/account')
+    async handleGetAccount(@User() user: IUser) {
+        const roleTemp = await this.roleService.findOne(user.role._id) as any;
+        user.permissions = roleTemp.permissions;
+        return { user };
+    }
+
 
     @ResponseMessage('Register a new user')
     @Public()

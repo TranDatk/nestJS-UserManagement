@@ -15,6 +15,7 @@ import { IsUniqueConstraint } from 'src/custom-decorators/unique.decorator';
   providers: [
     RolesService,
     IsUniqueConstraint,
-  ]
+  ],
+  exports: [RolesService]
 })
 export class RolesModule { }

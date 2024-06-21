@@ -9,28 +9,36 @@ import { CookieOptions, Response } from 'express'
 import { JWTUnauthorizedException } from 'src/exceptions/jwt.unauthorized.exception';
 import { NotFoundException } from 'src/exceptions/not-found.exception';
 import { User } from 'src/users/schemas/user.schema';
+import { RolesService } from 'src/roles/roles.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
-        private configService: ConfigService
+        private configService: ConfigService,
+        private rolesService: RolesService,
     ) { }
 
     async validateUser(username: string, pass: string): Promise<any> {
-        const user = await this.usersService.findOneByUsername(username);
+        const user: any = await this.usersService.findOneByUsername(username);
         if (user) {
             const isValid = await this.usersService.isValidPassword(pass, user.password);
             if (isValid) {
-                return user;
+                const userRole = user.role as unknown as { _id: string; name: string };
+                const temp = await this.rolesService.findOne(userRole._id);
+                const objectUser = {
+                    ...user.toObject(),
+                    permissions: temp.permissions ?? []
+                }
+                return objectUser;
             }
         }
         return null;
     }
 
     async login(user: IUser, response: Response) {
-        const { _id, name, email, role } = user;
+        const { _id, name, email, role, permissions } = user;
         const payload = {
             sub: "Token login",
             iss: "From server",
@@ -43,7 +51,8 @@ export class AuthService {
         const refresh_token = this.createRefreshToken(payload);
 
         //update user refresh token in database
-        await this.usersService.updateUserToken(refresh_token, _id);
+        const a = await this.usersService.updateUserToken(refresh_token, _id);
+        console.log(a)
 
         //set cookies for response
         const cookieOptions: CookieOptions = {
@@ -59,7 +68,8 @@ export class AuthService {
                 _id,
                 name,
                 email,
-                role
+                role,
+                permissions
             }
         };
     }
@@ -94,12 +104,18 @@ export class AuthService {
             }
             this.jwtService.verify(refreshToken, option);
 
-            const user: User = await this.usersService.findUserByToken(refreshToken);
-            const parsingUser: IUser = {
-                _id: user._id,
+            const user = await this.usersService.findUserByToken(refreshToken);
+
+            //fetch user's role 
+            const userRole = user.role as unknown as { _id: string };
+            const temp = await this.rolesService.findOne(userRole._id);
+
+            const parsingUser = {
+                _id: user._id.toString(),
                 name: user.name,
                 email: user.email,
-                role: user.role,
+                role: user.role as any,
+                permissions: temp as any
             }
             if (user) {
                 return this.login(parsingUser, response);

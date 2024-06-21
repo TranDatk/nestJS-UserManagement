@@ -56,30 +56,33 @@ export class DatabasesService implements OnModuleInit {
                 await this.userModel.insertMany([
                     {
                         name: "I'm admin",
-                        email: "admin@gmai.com",
+                        email: "admin@gmail.com",
                         password: this.userService.getHashPassword(this.configService.get<string>('INIT_PASSWORD')),
                         age: 22,
                         gender: "MALE",
                         address: "VietNam",
-                        role: adminRole._id
+                        role: adminRole._id,
+                        refreshToken: null
                     },
                     {
                         name: "I'm user 1",
-                        email: "user1@gmai.com",
+                        email: "user1@gmail.com",
                         password: this.userService.getHashPassword(this.configService.get<string>('INIT_PASSWORD')),
                         age: 22,
                         gender: "MALE",
                         address: "VietNam",
-                        role: userRole._id
+                        role: userRole._id,
+                        refreshToken: null
                     },
                     {
                         name: "I'm user 2",
-                        email: "user2@gmai.com",
+                        email: "user2@gmail.com",
                         password: this.userService.getHashPassword(this.configService.get<string>('INIT_PASSWORD')),
                         age: 22,
                         gender: "MALE",
                         address: "VietNam",
-                        role: userRole._id
+                        role: userRole._id,
+                        refreshToken: null
                     },
                 ]);
             }

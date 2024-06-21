@@ -9,6 +9,7 @@ import { ExistedException } from 'src/exceptions/existed.format.exception';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
 import { InvalidIdException } from 'src/exceptions/invalid-id-format.exception';
+import { ADMIN_ROLE } from 'src/databases/init-data';
 
 @Injectable()
 export class RolesService {
@@ -91,7 +92,7 @@ export class RolesService {
     }
 
     const adminRole: Role = await this.roleModel.findById(id);
-    if (adminRole.name === 'ADMIN') {
+    if (adminRole.name === ADMIN_ROLE) {
       throw new BadRequestException("Cannot delete the admin role!!!")
     }
     await this.roleModel.updateOne(
