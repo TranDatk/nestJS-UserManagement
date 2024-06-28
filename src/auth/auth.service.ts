@@ -52,7 +52,6 @@ export class AuthService {
 
         //update user refresh token in database
         const a = await this.usersService.updateUserToken(refresh_token, _id);
-        console.log(a)
 
         //set cookies for response
         const cookieOptions: CookieOptions = {

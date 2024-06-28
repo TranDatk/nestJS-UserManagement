@@ -145,7 +145,7 @@ export class UsersService {
     }
 
     const adminUser: User = await this.userModel.findById(id);
-    if (adminUser.email === this.configService.get<string>('ADMIN_EMAIL')) {
+    if (adminUser && adminUser.email === this.configService.get<string>('ADMIN_EMAIL')) {
       throw new BadRequestException("Cannot delete the admin account!!!")
     }
 
