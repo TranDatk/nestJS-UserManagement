@@ -52,7 +52,7 @@ This project is a User Management API built with NestJS. It includes user CRUD o
    ```bash
       npm run dev
 
-2. The application will be running at http://localhost:3000
+2. The application will be running at http://localhost:8005
 
 ## Endpoints
 
