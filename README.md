@@ -18,8 +18,8 @@ This project is a User Management API built with NestJS. It includes user CRUD o
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/user-management-api.git
-   cd user-management-api
+   https://github.com/TranDatk/nestJS-UserManagement.git
+   cd nestJS-UserManagement.git
 
 2. Install the dependencies:
    ```bash
