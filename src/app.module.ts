@@ -10,11 +10,21 @@ import { FilesModule } from './files/files.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
 import { DatabasesModule } from './databases/databases.module';
+import { MailModule } from './mail/mail.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [
+        ConfigModule,
+        ThrottlerModule.forRoot({
+          ttl: 60,
+          limit: 10,
+        }),
+        ScheduleModule.forRoot()
+      ],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URL'),
         connectionFactory: (connection) => {
@@ -36,6 +46,7 @@ import { DatabasesModule } from './databases/databases.module';
     PermissionsModule,
     RolesModule,
     DatabasesModule,
+    MailModule,
   ],
 
   controllers: [AppController],

@@ -8,7 +8,11 @@ import { Request, Response } from 'express';
 import { User } from 'src/custom-decorators/parsing-user-decorator';
 import { IUser } from 'src/users/users.interface';
 import { RolesService } from 'src/roles/roles.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { UserLoginDto } from 'src/users/dto/create-user.dto';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
     constructor(
@@ -16,9 +20,11 @@ export class AuthController {
         private roleService: RolesService,
     ) { }
 
+    @ApiBody({ type: UserLoginDto })
     @Public()
     @ResponseMessage('User login')
     @UseGuards(LocalAuthGuard)
+    @UseGuards(ThrottlerGuard)
     @Post('/login')
     async handleLogin(
         @Res({ passthrough: true }) response: Response,
