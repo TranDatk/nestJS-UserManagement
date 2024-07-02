@@ -24,7 +24,7 @@ export class MailController {
       subject: 'Welcome to Nice App! Confirm your Email',
       template: 'test',
       context: {
-        receiver: 'dat'
+        receiver: 'dat assad'
       }
     });
   }
