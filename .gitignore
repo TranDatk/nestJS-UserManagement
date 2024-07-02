@@ -141,3 +141,6 @@ __pycache__/
 # Ignore temporary files from VS Code
 .history/
 package-lock.json
+
+#Ignore documentation
+documentation
